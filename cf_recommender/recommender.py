@@ -81,27 +81,30 @@ class Recommender(object):
 
         # get all user's like history
         all_users_like_history = self.get_all_users_like_history()
-        # print all_users_like_history
 
         # marge user's like history by goods_id
-        hist = defaultdict(list)
-        for user_id in all_users_like_history:
-            for goods_id in all_users_like_history[user_id]:
-                hist[goods_id] += [user_id]
+        for tag in all_users_like_history:
+            hist = defaultdict(list)
+            users_like_history = all_users_like_history.get(tag)
+            for user_id in users_like_history:
+                for goods_id in users_like_history[user_id]:
+                    hist[goods_id] += [user_id]
 
-        # recreate index
-        for goods_id in all_goods_ids:
-            self.repository.recreate_index(goods_id, hist[goods_id])
+            # recreate index
+            for goods_id in all_goods_ids:
+                if goods_id in hist:
+                    self.repository.recreate_index(goods_id, hist[goods_id])
 
     def get_all_users_like_history(self):
         """
         :rtype : dict{str: list[int]}
-        :rturn : dict{user_id: list of goods_id}
+        :rtype dict{str: dict{str: list[str]}} : dict{user_id: dict{tag:list[goods_id]}}
         """
         # get all user like history keys
-        all_user_ids = self.repository.get_all_user_ids()
+        all_user_keys = self.repository.get_all_user_ids()
 
-        result = {}
-        for user_id in all_user_ids:
-            result[user_id] = self.repository.get_user_like_history(user_id)
+        result = defaultdict(dict)
+        for key in all_user_keys:
+            tag, user_id = Repository.get_user_and_key_from_redis_key(key)
+            result[tag].update({user_id: self.repository.get_user_like_history(user_id, tag)})
         return result

@@ -8,5 +8,9 @@ DEFAULT_SETTINGS = {
                 'host': 'localhost',
                 'port': 6379,
                 'db': 12
-            }
+            },
+            # recommendation engine settings
+            'recommendation': {
+                'user_history_count': 1000,
+            },
         }
