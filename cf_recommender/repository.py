@@ -10,6 +10,7 @@ GOODS_TAG_BASE = '%s:GOODS:TAG:{}' % PREFIX
 USER_LIKE_HISTORY_BASE = '%s:USER:LIKE-HISTORY:{}:{}' % PREFIX
 INDEX_GOODS_USER_BASE = '%s:INDEX:GOODS-USER-LIKE-HISTORY:{}:{}' % PREFIX
 GOODS_ALL = '%s:GOODS:ALL' % PREFIX
+GOODS_RECOMMENDATION = '%s:GOODS:RECOMMENDATION:{}:{}' % PREFIX
 
 # redis TTL
 PERSISTENT_SEC = 3600 * 24 * 365 * 1000
@@ -46,6 +47,10 @@ class Repository(object):
         return INDEX_GOODS_USER_BASE.format(tag, str(goods_id)).upper()
 
     @classmethod
+    def get_key_goods_recommendation(cls, tag, goods_id):
+        return GOODS_RECOMMENDATION.format(tag, str(goods_id)).upper()
+
+    @classmethod
     def get_user_and_key_from_redis_key(cls, key):
         """
         >>> key = "CF_RECOMMENDER:USER:LIKE-HISTORY:BOOK:035A6959-B024-43CD-9FE9-5BCD4A0E5A92"
@@ -56,17 +61,6 @@ class Repository(object):
         """
         r = key.split(':')
         return r[3:]
-
-    def get_goods_tag(self, goods_id):
-        tag = Repository._CACHE_GOODS_TAG.get(goods_id)
-        if tag is None:
-            tag = self.get_tag(goods_id)
-            Repository._CACHE_GOODS_TAG[goods_id] = tag
-        return tag
-
-    def get_tag(self, goods_id):
-        key = self.get_key_goods_tag(goods_id)
-        return self.client.get(key)
 
     @property
     def client(self):
@@ -79,6 +73,33 @@ class Repository(object):
     @property
     def expire(self):
         return self.settings.get('expire')
+
+    def touch(self, key):
+        self.client.expire(key, self.expire)
+
+    def get(self, goods_id, count=None):
+        """
+        get recommendation list
+        :param goods_id: str
+        :param count: int
+        :rtype list[str]: list of recommendation goods
+        """
+        if not count:
+            count = self.settings.get('recommendation_count')
+        tag = self.get_tag(goods_id)
+        key = Repository.get_key_goods_recommendation(tag, goods_id)
+        return self.client.zrevrange(key, 0, count - 1)
+
+    def get_goods_tag(self, goods_id):
+        tag = Repository._CACHE_GOODS_TAG.get(goods_id)
+        if tag is None:
+            tag = self.get_tag(goods_id)
+            Repository._CACHE_GOODS_TAG[goods_id] = tag
+        return tag
+
+    def get_tag(self, goods_id):
+        key = self.get_key_goods_tag(goods_id)
+        return self.client.get(key)
 
     def goods_exist(self, goods_id):
         """
@@ -121,6 +142,30 @@ class Repository(object):
             result[self.get_tag(str(goods_id))] += [str(goods_id)]
         return result
 
+    def update_recommendation(self, goods_id):
+        tag = self.get_tag(goods_id)
+
+        # get user
+        users = self.get_goods_like_history(goods_id)
+
+        # calc recommendation
+        recommendation_list = []
+        for user_id in users:
+            recommendation_list += self.get_user_like_history(user_id, tag)
+
+        result = defaultdict(int)
+        for _tmp_goods_id in recommendation_list:
+            if _tmp_goods_id == goods_id:
+                continue
+            result[_tmp_goods_id] += 1
+
+        # set sorted set of redis
+        key = Repository.get_key_goods_recommendation(tag, goods_id)
+        self.client.delete(key)
+        for _tmp_goods_id in result:
+            self.push_recommendation(key, _tmp_goods_id, result[_tmp_goods_id])
+        return
+
     def update_index(self, user_id, goods_ids):
         """
         update goods index
@@ -133,6 +178,18 @@ class Repository(object):
             key = Repository.get_key_index_goods_user_like_history(tag, goods_id)
             self.client.rpush(key, user_id)
         return
+
+    def get_goods_like_history(self, goods_id, count=None):
+        """
+        :param goods_id: str
+        :param count: int
+        :rtype list[str]: liked users of goods
+        """
+        if not count:
+            count = self.settings.get('recommendation').get('goods_like_history_search_depth')
+        tag = self.get_tag(goods_id)
+        key = Repository.get_key_index_goods_user_like_history(tag, goods_id)
+        return self.client.lrange(key, -1 * count, -1)
 
     def get_all_goods_ids(self):
         """
@@ -152,17 +209,27 @@ class Repository(object):
         key = Repository.get_key_user_like_history('*', '*')
         return self.client.keys(key)
 
-    def get_user_like_history(self, user_id, tag):
+    def get_user_like_history(self, user_id, tag, count=None):
         """
         :param user_id: str or unicode
-        :rtype : list[str]
+        :rtype list[str]: goods_ids of user
         """
+        if not count:
+            count = self.settings.get('recommendation').get('user_history_count')
         key = Repository.get_key_user_like_history(tag, user_id)
-        num = self.settings.get('recommendation').get('user_history_count')
-        result = self.client.lrange(key, -1 * num, -1)
+        result = self.client.lrange(key, -1 * count, -1)
         if not result:
             return []
         return result
+
+    def push_recommendation(self, key, goods_id, value):
+        """
+        update recommendation sorted set
+        :param str goods_id:
+        :param str value: count
+        """
+        self.client.zadd(key, goods_id, int(value))
+        self.touch(key)
 
     def recreate_index(self, goods_id, user_ids):
         """
@@ -175,7 +242,7 @@ class Repository(object):
             return
         tag = self.get_tag(goods_id)
         key = Repository.get_key_index_goods_user_like_history(tag, goods_id)
-        print '@@@@@', key, user_ids
+        # print '@@@@@', key, user_ids
         # delete list
         self.client.delete(key)
         # update list

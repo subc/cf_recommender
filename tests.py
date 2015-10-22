@@ -14,10 +14,12 @@ def test_recommender():
     }
     r = Recommender(settings)
 
+    normal_test(r)
     register(r)
     like(r)
     get_all(r)
     update_index(r)
+    data_consistency(r)
 
 
 def register(r):
@@ -57,7 +59,6 @@ def get_all(r):
 
 
 def update_index(r):
-    user_id = str(uuid4())
     like_goods_ids = [random.randint(1, 100 * 10000) for x in range(random.randint(1, 100))]
     for goods_id in like_goods_ids:
         r.register(goods_id, random.choice(tags))
@@ -66,3 +67,80 @@ def update_index(r):
 
     # recreate all index: 1800sec
     r.recreate_all_index()
+
+    # update all
+    r.update_all()
+
+
+def data_consistency(r):
+    # register
+    goods_ids = ['Book-X', 'Book-A', 'Book-B', 'Book-C', 'Book-D', 'Book-E']
+    for goods_id in goods_ids:
+        r.register(goods_id, 'book')
+
+    # create users
+    users = [
+        ['A', ['Book-{}'.format(x) for x in ['X', 'B']]],
+        ['B', ['Book-{}'.format(x) for x in ['A', 'B', 'C']]],
+        ['C', ['Book-{}'.format(x) for x in ['X', 'B', 'C', 'D']]],
+        ['D', ['Book-{}'.format(x) for x in ['A', 'C', 'E']]],
+        ['E', ['Book-{}'.format(x) for x in ['X', 'A']]],
+        ['F', ['Book-{}'.format(x) for x in ['E']]],
+        ['G', ['Book-{}'.format(x) for x in ['C', 'E']]],
+    ]
+
+    # like
+    for user, hist in users:
+        # r.remove_like(user)
+        r.like(user, hist)
+
+    # get
+    answer = {
+        'Book-X': ['Book-{}'.format(x) for x in ['B']],
+        'Book-A': ['Book-{}'.format(x) for x in ['C']],
+        'Book-B': ['Book-{}'.format(x) for x in []],
+        'Book-C': ['Book-{}'.format(x) for x in []],
+        'Book-D': ['Book-{}'.format(x) for x in []],
+        'Book-E': ['Book-{}'.format(x) for x in ['C']],
+    }
+
+    for goods_id in goods_ids:
+        r.update(goods_id)
+        print goods_id, r.get(goods_id, count=1)
+        if len(answer.get(goods_id)):
+            print answer.get(goods_id)
+            assert r.get(goods_id, count=1)[0] == answer.get(goods_id)[0]
+
+
+def normal_test(r):
+    # register
+    goods_ids = ['DVD-1', 'DVD-2', 'DVD-3', 'DVD-4']
+    for goods_id in goods_ids:
+        r.register(goods_id, 'dvd')
+
+    # like
+    for x in xrange(1000):
+        user_id = str(uuid4())
+        hist = []
+        hist.append(goods_ids[0])
+        if random.randint(1, 2) == 1:
+            hist.append(goods_ids[1])
+        if random.randint(1, 4) == 1:
+            hist.append(goods_ids[2])
+        if random.randint(1, 8) == 1:
+            hist.append(goods_ids[3])
+        r.like(user_id, hist)
+
+    # test get
+    goods_id = goods_ids[0]
+    assert len(r.get(goods_id, count=1)) == 1
+    assert len(r.get(goods_id, count=2)) == 2
+    assert len(r.get(goods_id, count=3)) == 3
+
+    # update recommendation and check recommendation order
+    for goods_id in goods_ids:
+        r.update(goods_id)
+        if goods_id == goods_ids[0]:
+            assert r.get(goods_id, count=3)[0:3] == goods_ids[1:]
+        else:
+            assert r.get(goods_id, count=1)[0] == goods_ids[0]

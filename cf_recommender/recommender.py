@@ -22,6 +22,17 @@ class Recommender(object):
             self._r = Repository(self.settings)
         return self._r
 
+    def get(self, goods_id, count=None):
+        return self.repository.get(goods_id, count=count)
+
+    def update(self, goods_id):
+        """
+        update recommendation list
+        :param goods_id: str
+        """
+        self.repository.update_recommendation(goods_id)
+        return
+
     def register(self, goods_id, tag=DEFAULT_TAG):
         """
         register goods_id
@@ -38,6 +49,8 @@ class Recommender(object):
         :param goods_ids: list[int]
         :rtype : None
         """
+        assert type(goods_ids) == list
+
         # like
         self.repository.like(user_id, goods_ids)
 
@@ -54,6 +67,7 @@ class Recommender(object):
         """
         return self.repository.get_all_goods_ids()
 
+    @timeit
     def update_all(self, proc=1, scope=(1, 1)):
         """
         update all recommendation
@@ -62,7 +76,9 @@ class Recommender(object):
         :param tuple(list[int, int]) scope: update scope [start, partition count]
         :rtype : None
         """
-        pass
+        all_goods_ids = self.get_all_goods_ids()
+        for goods_id in all_goods_ids:
+            self.repository.update_recommendation(goods_id)
 
     @timeit
     def recreate_all_index(self):
