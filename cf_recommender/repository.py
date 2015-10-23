@@ -101,18 +101,6 @@ class Repository(object):
         key = Repository.get_key_goods_tag(goods_id)
         return self.client.hset(key, HASH_FIELD_GOODS_TAG, tag)
 
-    def remove_goods(self, goods_id):
-        # remove goods tag and recommendation
-        tag = self.get_goods_tag(goods_id)
-        key_tag = Repository.get_key_goods_tag(goods_id)
-        key_recommendation = Repository.get_key_goods_recommendation(tag, goods_id)
-        self.client.delete(key_tag, key_recommendation)
-        self.client.delete(key_recommendation)
-
-        # delete tag cache
-        del Repository._CACHE_GOODS_TAG[goods_id]
-        return
-
     def like(self, user_id, goods_ids):
         """
         record user like history
@@ -263,6 +251,18 @@ class Repository(object):
         for key in keys:
             goods_history += self.client.lrange(key, 0, -1)
         return goods_history
+
+    def remove_goods(self, goods_id):
+        # remove goods tag and recommendation
+        tag = self.get_goods_tag(goods_id)
+        key_tag = Repository.get_key_goods_tag(goods_id)
+        key_recommendation = Repository.get_key_goods_recommendation(tag, goods_id)
+        self.client.delete(key_tag, key_recommendation)
+        self.client.delete(key_recommendation)
+
+        # delete tag cache
+        del Repository._CACHE_GOODS_TAG[goods_id]
+        return
 
     def remove_user(self, user_id):
         """
