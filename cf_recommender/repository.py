@@ -2,6 +2,7 @@
 from __future__ import absolute_import, unicode_literals
 from collections import defaultdict
 from redis import Redis
+from cf_recommender.timeit import timeit
 from .settings import DEFAULT_SETTINGS
 
 # redis key
@@ -129,7 +130,9 @@ class Repository(object):
         goods_group = self.categorized(goods_ids)
         for tag in goods_group:
             key = Repository.get_key_user_like_history(tag, user_id)
-            self.client.rpush(key, *goods_ids)
+            _goods_ids = goods_group[tag]
+            if _goods_ids:
+                self.client.rpush(key, *_goods_ids)
         return
 
     def categorized(self, goods_ids):
@@ -142,6 +145,7 @@ class Repository(object):
             result[self.get_tag(str(goods_id))] += [str(goods_id)]
         return result
 
+    @timeit
     def update_recommendation(self, goods_id):
         tag = self.get_tag(goods_id)
 

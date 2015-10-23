@@ -4,6 +4,7 @@ from cf_recommender.recommender import Recommender
 import random
 from uuid import uuid4
 from cf_recommender.repository import Repository
+from cf_recommender.timeit import timeit
 
 tags = ['default', 'book', 'computer', 'dvd', 'camera', 'clothes', 'tag7', 'tag8', 'tag9', 'tag10']
 
@@ -72,6 +73,7 @@ def update_index(r):
     r.update_all()
 
 
+@timeit
 def data_consistency(r):
     # register
     goods_ids = ['Book-X', 'Book-A', 'Book-B', 'Book-C', 'Book-D', 'Book-E']
@@ -112,6 +114,7 @@ def data_consistency(r):
             assert r.get(goods_id, count=1)[0] == answer.get(goods_id)[0]
 
 
+@timeit
 def normal_test(r):
     # register
     goods_ids = ['DVD-1', 'DVD-2', 'DVD-3', 'DVD-4']
@@ -131,12 +134,6 @@ def normal_test(r):
             hist.append(goods_ids[3])
         r.like(user_id, hist)
 
-    # test get
-    goods_id = goods_ids[0]
-    assert len(r.get(goods_id, count=1)) == 1
-    assert len(r.get(goods_id, count=2)) == 2
-    assert len(r.get(goods_id, count=3)) == 3
-
     # update recommendation and check recommendation order
     for goods_id in goods_ids:
         r.update(goods_id)
@@ -144,3 +141,9 @@ def normal_test(r):
             assert r.get(goods_id, count=3)[0:3] == goods_ids[1:]
         else:
             assert r.get(goods_id, count=1)[0] == goods_ids[0]
+
+    # test get
+    goods_id = goods_ids[0]
+    assert len(r.get(goods_id, count=1)) == 1
+    assert len(r.get(goods_id, count=2)) == 2
+    assert len(r.get(goods_id, count=3)) == 3

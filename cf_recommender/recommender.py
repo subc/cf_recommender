@@ -2,7 +2,6 @@
 from __future__ import absolute_import, unicode_literals
 from collections import defaultdict
 from .timeit import timeit
-from .exception import RegisteredError
 from .repository import Repository
 from .settings import DEFAULT_SETTINGS
 
@@ -22,9 +21,14 @@ class Recommender(object):
             self._r = Repository(self.settings)
         return self._r
 
+    @property
+    def is_recommendation_real_time_update(self):
+        return self.settings.get('recommendation').get('recommendation_real_time_update')
+
     def get(self, goods_id, count=None):
         return self.repository.get(goods_id, count=count)
 
+    @timeit
     def update(self, goods_id):
         """
         update recommendation list
@@ -42,9 +46,11 @@ class Recommender(object):
         """
         return self.repository.register(goods_id, tag)
 
+    @timeit
     def like(self, user_id, goods_ids):
         """
         record user like history
+        about: 100ms * count(goods_ids)
         :param user_id: str
         :param goods_ids: list[int]
         :rtype : None
@@ -56,6 +62,12 @@ class Recommender(object):
 
         # create index
         self.repository.update_index(user_id, goods_ids)
+
+        # update recommendation
+        if not self.is_recommendation_real_time_update:
+            return
+        for goods_id in goods_ids:
+            self.repository.update_recommendation(goods_id)  # RealTime update
 
         return
 

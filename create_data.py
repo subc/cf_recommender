@@ -9,7 +9,6 @@ settings = {
     'expire': 3600 * 24 * 100
 }
 
-
 # register new goods
 tags = ['default', 'book', 'computer', 'dvd', 'camera', 'clothes', 'tag7', 'tag8', 'tag9', 'tag10']
 r = Recommender(settings)
