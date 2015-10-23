@@ -21,6 +21,8 @@ def test_recommender():
     get_all(r)
     update_index(r)
     data_consistency(r)
+    del_data_user(r)
+    del_data_goods(r)
 
 
 def register(r):
@@ -132,7 +134,8 @@ def normal_test(r):
             hist.append(goods_ids[2])
         if random.randint(1, 8) == 1:
             hist.append(goods_ids[3])
-        r.like(user_id, hist)
+        r.like(user_id, hist, realtime_update=False)
+    r.like(user_id, hist, realtime_update=True)
 
     # update recommendation and check recommendation order
     for goods_id in goods_ids:
@@ -147,3 +150,11 @@ def normal_test(r):
     assert len(r.get(goods_id, count=1)) == 1
     assert len(r.get(goods_id, count=2)) == 2
     assert len(r.get(goods_id, count=3)) == 3
+
+
+def del_data_user(r):
+    pass
+
+
+def del_data_goods(r):
+    pass

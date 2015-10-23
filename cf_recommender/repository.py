@@ -6,12 +6,12 @@ from cf_recommender.timeit import timeit
 from .settings import DEFAULT_SETTINGS
 
 # redis key
-PREFIX = 'CF_RECOMMENDER'
+PREFIX = 'CF'
 GOODS_TAG_BASE = '%s:GOODS:TAG:{}' % PREFIX
-USER_LIKE_HISTORY_BASE = '%s:USER:LIKE-HISTORY:{}:{}' % PREFIX
-INDEX_GOODS_USER_BASE = '%s:INDEX:GOODS-USER-LIKE-HISTORY:{}:{}' % PREFIX
+USER_LIKE_HISTORY_BASE = '%s:USER:LIKE-HIS:{}:{}' % PREFIX
+INDEX_GOODS_USER_BASE = '%s:INDEX:GOODS-HIS:{}:{}' % PREFIX
 GOODS_ALL = '%s:GOODS:ALL' % PREFIX
-GOODS_RECOMMENDATION = '%s:GOODS:RECOMMENDATION:{}:{}' % PREFIX
+GOODS_RECOMMENDATION = '%s:GOODS:RECO:{}:{}' % PREFIX
 
 # redis TTL
 PERSISTENT_SEC = 3600 * 24 * 365 * 1000
@@ -145,7 +145,6 @@ class Repository(object):
             result[self.get_tag(str(goods_id))] += [str(goods_id)]
         return result
 
-    @timeit
     def update_recommendation(self, goods_id):
         tag = self.get_tag(goods_id)
 

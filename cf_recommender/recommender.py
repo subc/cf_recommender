@@ -21,14 +21,9 @@ class Recommender(object):
             self._r = Repository(self.settings)
         return self._r
 
-    @property
-    def is_recommendation_real_time_update(self):
-        return self.settings.get('recommendation').get('recommendation_real_time_update')
-
     def get(self, goods_id, count=None):
         return self.repository.get(goods_id, count=count)
 
-    @timeit
     def update(self, goods_id):
         """
         update recommendation list
@@ -46,13 +41,13 @@ class Recommender(object):
         """
         return self.repository.register(goods_id, tag)
 
-    @timeit
-    def like(self, user_id, goods_ids):
+    def like(self, user_id, goods_ids, realtime_update=True):
         """
         record user like history
         about: 100ms * count(goods_ids)
         :param user_id: str
         :param goods_ids: list[int]
+        :param realtime_update: bool
         :rtype : None
         """
         assert type(goods_ids) == list
@@ -64,10 +59,9 @@ class Recommender(object):
         self.repository.update_index(user_id, goods_ids)
 
         # update recommendation
-        if not self.is_recommendation_real_time_update:
-            return
-        for goods_id in goods_ids:
-            self.repository.update_recommendation(goods_id)  # RealTime update
+        if realtime_update:
+            for goods_id in goods_ids:
+                self.repository.update_recommendation(goods_id)  # RealTime update
 
         return
 
