@@ -91,14 +91,6 @@ class Repository(object):
         key = self.get_key_goods_tag(goods_id)
         return self.client.hget(key, HASH_FIELD_GOODS_TAG)
 
-    def goods_exist(self, goods_id):
-        """
-        already registered goods
-        :param : str
-        :rtype : bool
-        """
-        return bool(self.client.get(Repository.get_key_goods_tag(goods_id)))
-
     def register(self, goods_id, tag):
         """
         register goods_id
@@ -277,7 +269,7 @@ class Repository(object):
         remove user
         :param user_id: str
         """
-        # keyを並べる
+        # get user's redis key
         keys_asterisk_pattern = Repository.get_key_user_like_history('*', user_id)
         keys = self.client.keys(keys_asterisk_pattern)
         users_goods = self.get_all_goods_by_user(user_id)
@@ -285,7 +277,7 @@ class Repository(object):
         # delete user from index
         self.remove_user_from_index(user_id, users_goods)
 
-        # delete user history
+        # delete user from history
         for key in keys:
             self.client.delete(key)
 

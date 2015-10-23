@@ -8,20 +8,7 @@ from .settings import DEFAULT_SETTINGS
 DEFAULT_TAG = 'default'
 
 
-class UpdateMixin(object):
-    def remove_goods(self, goods_id):
-        self.repository.remove_goods(goods_id)
-
-    def update_goods_tag(self, goods_id, new_tag):
-        old_tag = self.repository.get_goods_tag(goods_id)
-        self.remove_goods(goods_id)
-        self.register(goods_id, tag=new_tag)
-
-    def remove_user(self, user_id):
-        self.repository.remove_user(user_id)
-
-
-class Recommender(UpdateMixin):
+class Recommender(object):
     _r = None
 
     def __init__(self, settings):
@@ -143,3 +130,14 @@ class Recommender(UpdateMixin):
             tag, user_id = Repository.get_user_and_key_from_redis_key(key)
             result[tag].update({user_id: self.repository.get_user_like_history(user_id, tag)})
         return result
+
+    def remove_goods(self, goods_id):
+        self.repository.remove_goods(goods_id)
+
+    def update_goods_tag(self, goods_id, new_tag):
+        old_tag = self.repository.get_goods_tag(goods_id)
+        self.remove_goods(goods_id)
+        self.register(goods_id, tag=new_tag)
+
+    def remove_user(self, user_id):
+        self.repository.remove_user(user_id)
