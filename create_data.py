@@ -17,7 +17,7 @@ settings = {
 
 # register new goods
 tags = ['default', 'book', 'computer', 'dvd', 'camera', 'clothes', 'tag7', 'tag8', 'tag9', 'tag10']
-r = Recommender(settings)
+r = Recommender(settings=settings)
 for x in xrange(1, 100 * 10000):
     r.register(x, tag=random.choice(tags))
 

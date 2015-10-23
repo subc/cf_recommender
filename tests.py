@@ -13,7 +13,7 @@ def test_recommender():
     settings = {
         'expire': 3600 * 24 * 100
     }
-    r = Recommender(settings)
+    r = Recommender(settings=settings)
 
     normal_test(r)
     register(r)
@@ -21,8 +21,7 @@ def test_recommender():
     get_all(r)
     update_index(r)
     data_consistency(r)
-    del_data_user(r)
-    del_data_goods(r)
+    del_user(r)
 
 
 def register(r):
@@ -151,10 +150,51 @@ def normal_test(r):
     assert len(r.get(goods_id, count=2)) == 2
     assert len(r.get(goods_id, count=3)) == 3
 
+    # goods delete test
+    r.remove_goods(goods_ids[0])
+    assert r.repository.get_goods_tag(goods_ids[0]) is None
+    for goods_id in goods_ids:
+        r.repository.update_recommendation(goods_id)
+    for goods_id in goods_ids:
+        r.update(goods_id)
+        if goods_id == goods_ids[0]:
+            assert r.get(goods_id, count=3) == []
+        else:
+            assert r.get(goods_id, count=1)[0] != goods_ids[0]
 
-def del_data_user(r):
-    pass
 
+def del_user(r):
+    # user register
+    user_id1 = str('aaaaaaaa-aaaa-aaaa-aaaa-000000000001')
+    user_id2 = str('zzzzzzzz-zzzz-zzzz-zzzz-000000000000')
+    goods_ids = ['ITEM-{}'.format(str(x)) for x in xrange(1, 100)]
+    for goods_id in goods_ids:
+        r.register(goods_id, random.choice(tags))
+    r.like(user_id1, goods_ids)
+    r.like(user_id2, goods_ids)
+    for goods_id in goods_ids:
+        r.update(goods_id)
 
-def del_data_goods(r):
-    pass
+    # remove user1
+    r.remove_user(user_id1)
+
+    # Test removed user1 from index
+    for x in xrange(5):
+        goods_id = random.choice(goods_ids)
+        tag = r.repository.get_goods_tag(goods_id)
+        key = Repository.get_key_index_goods_user_like_history(tag, goods_id)
+        users = r.repository.client.lrange(key, 0, -1)
+        assert user_id1 not in users
+        assert user_id2 in users
+
+    # remove user2
+    r.remove_user(user_id2)
+
+    # Test removed user2 from index
+    for x in xrange(5):
+        goods_id = random.choice(goods_ids)
+        tag = r.repository.get_goods_tag(goods_id)
+        key = Repository.get_key_index_goods_user_like_history(tag, goods_id)
+        users = r.repository.client.lrange(key, 0, -1)
+        assert user_id1 not in users
+        assert user_id2 not in users

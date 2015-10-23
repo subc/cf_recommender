@@ -10,28 +10,17 @@ PREFIX = 'CF'
 GOODS_TAG_BASE = '%s:GOODS:TAG:{}' % PREFIX
 USER_LIKE_HISTORY_BASE = '%s:USER:LIKE-HIS:{}:{}' % PREFIX
 INDEX_GOODS_USER_BASE = '%s:INDEX:GOODS-HIS:{}:{}' % PREFIX
-GOODS_ALL = '%s:GOODS:ALL' % PREFIX
 GOODS_RECOMMENDATION = '%s:GOODS:RECO:{}:{}' % PREFIX
 
-# redis TTL
-PERSISTENT_SEC = 3600 * 24 * 365 * 1000
-
-
-class GetALLMixin(object):
-    def get_goods_all(self):
-        return self.client.lrange(GOODS_ALL, 0, -1)
-
-    def add_goods(self, goods_ids):
-        goods_ids = [str(goods_id) for goods_id in goods_ids]
-        self.client.rpush(GOODS_ALL, *goods_ids)
-        return
+# redis hash key
+HASH_FIELD_GOODS_TAG = "TAG"
 
 
 class Repository(object):
     _cli = None
     _CACHE_GOODS_TAG = {}  # class cache
 
-    def __init__(self, settings):
+    def __init__(self, settings=DEFAULT_SETTINGS):
         DEFAULT_SETTINGS.update(settings)
         self.settings = DEFAULT_SETTINGS
 
@@ -100,7 +89,7 @@ class Repository(object):
 
     def get_tag(self, goods_id):
         key = self.get_key_goods_tag(goods_id)
-        return self.client.get(key)
+        return self.client.hget(key, HASH_FIELD_GOODS_TAG)
 
     def goods_exist(self, goods_id):
         """
@@ -118,7 +107,19 @@ class Repository(object):
         :rtype : None
         """
         key = Repository.get_key_goods_tag(goods_id)
-        return self.client.setex(key, tag, PERSISTENT_SEC)
+        return self.client.hset(key, HASH_FIELD_GOODS_TAG, tag)
+
+    def remove_goods(self, goods_id):
+        # remove goods tag and recommendation
+        tag = self.get_goods_tag(goods_id)
+        key_tag = Repository.get_key_goods_tag(goods_id)
+        key_recommendation = Repository.get_key_goods_recommendation(tag, goods_id)
+        self.client.delete(key_tag, key_recommendation)
+        self.client.delete(key_recommendation)
+
+        # delete tag cache
+        del Repository._CACHE_GOODS_TAG[goods_id]
+        return
 
     def like(self, user_id, goods_ids):
         """
@@ -147,6 +148,8 @@ class Repository(object):
 
     def update_recommendation(self, goods_id):
         tag = self.get_tag(goods_id)
+        if tag is None:
+            return
 
         # get user
         users = self.get_goods_like_history(goods_id)
@@ -158,6 +161,10 @@ class Repository(object):
 
         result = defaultdict(int)
         for _tmp_goods_id in recommendation_list:
+            tag = self.get_tag(_tmp_goods_id)
+            if tag is None:
+                continue
+
             if _tmp_goods_id == goods_id:
                 continue
             result[_tmp_goods_id] += 1
@@ -250,4 +257,46 @@ class Repository(object):
         self.client.delete(key)
         # update list
         self.client.rpush(key, *user_ids)
+        return
+
+    def get_all_goods_by_user(self, user_id):
+        """
+        get all liked goods by user
+        :param user_id: str
+        :rtype: list[goods_id]
+        """
+        keys_asterisk_pattern = Repository.get_key_user_like_history('*', user_id)
+        keys = self.client.keys(keys_asterisk_pattern)
+        goods_history = []
+        for key in keys:
+            goods_history += self.client.lrange(key, 0, -1)
+        return goods_history
+
+    def remove_user(self, user_id):
+        """
+        remove user
+        :param user_id: str
+        """
+        # keyを並べる
+        keys_asterisk_pattern = Repository.get_key_user_like_history('*', user_id)
+        keys = self.client.keys(keys_asterisk_pattern)
+        users_goods = self.get_all_goods_by_user(user_id)
+
+        # delete user from index
+        self.remove_user_from_index(user_id, users_goods)
+
+        # delete user history
+        for key in keys:
+            self.client.delete(key)
+
+    def remove_user_from_index(self, user_id, goods_ids):
+        """
+        remove user from INDEX_GOODS_USER_BASE
+        :param user_id: str
+        :param goods_ids: list[str]
+        """
+        for goods_id in goods_ids:
+            tag = self.get_goods_tag(goods_id)
+            key = Repository.get_key_index_goods_user_like_history(tag, goods_id)
+            self.client.lrem(key, user_id, 0)
         return
