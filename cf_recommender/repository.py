@@ -84,6 +84,7 @@ class Repository(object):
             count = self.settings.get('recommendation_count')
         tag = self.get_tag(goods_id)
         key = Repository.get_key_goods_recommendation(tag, goods_id)
+        self.touch(key)
         return self.client.zrevrange(key, 0, count - 1)
 
     def get_goods_tag(self, goods_id):
@@ -120,6 +121,7 @@ class Repository(object):
             _goods_ids = goods_group[tag]
             if _goods_ids:
                 self.client.rpush(key, *_goods_ids)
+            self.touch(key)
         return
 
     def categorized(self, goods_ids):
