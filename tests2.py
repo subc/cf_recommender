@@ -18,11 +18,15 @@ def test_recommender():
             'port': 6379,
             'db': 12
         },
+        'recommendation': {
+            'update_interval_sec': 60,
+            'search_depth': 500,
+            'max_history': 1000,
+        },
     }
     r = Recommender(settings=settings)
 
     normal_test(r)
-    trim(r)
     register(r)
     like(r)
     get_all(r)
@@ -238,7 +242,22 @@ def test_lock():
     assert r.repository.is_lock(goods_id) is False
 
 
-def trim(r):
+def test_trim():
+    settings = {
+        'expire': 3600 * 24 * 100,
+        'redis': {
+            'host': 'localhost',
+            'port': 6379,
+            'db': 12
+        },
+        'recommendation': {
+            'update_interval_sec': 60,
+            'search_depth': 10,
+            'max_history': 30,
+        },
+    }
+    r = Recommender(settings=settings)
+
     key = "hogehoge:list"
     cli = r.repository.client
     l = range(1, 1001)
@@ -253,3 +272,20 @@ def trim(r):
     assert cli.llen(key) == 1000
     r.repository.trim(key, 200, hardly_ever=False)
     assert cli.llen(key) == 200
+
+    # user register
+    user_id = str('aaaaaaaa-aaaa-aaaa-aaaa-000000000005')
+    goods_id = 'ITEM-{}'.format(str(215))
+    tag = random.choice(tags)
+    r.register(goods_id, tag)
+    _max = 200
+    for x in xrange(_max):
+        r.like(user_id, [goods_id])
+    r.update(goods_id)
+
+    key = Repository.get_key_user_like_history(tag, user_id)
+    print "user hist", r.repository.client.llen(key)
+    assert r.repository.client.llen(key) < _max
+    key = Repository.get_key_index_goods_user_like_history(tag, goods_id)
+    print "index", r.repository.client.llen(key)
+    assert "index", r.repository.client.llen(key) < _max
