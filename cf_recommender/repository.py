@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
 from collections import defaultdict
+import random
 from redis import Redis
 from cf_recommender.timeit import timeit
 from .settings import DEFAULT_SETTINGS
@@ -122,6 +123,7 @@ class Repository(object):
             if _goods_ids:
                 self.client.rpush(key, *_goods_ids)
             self.touch(key)
+            self.trim(key)
         return
 
     def categorized(self, goods_ids):
@@ -188,6 +190,7 @@ class Repository(object):
             tag = self.get_tag(goods_id)
             key = Repository.get_key_index_goods_user_like_history(tag, goods_id)
             self.client.rpush(key, user_id)
+            self.trim(key)
         return
 
     def get_goods_like_history(self, goods_id, count=None):
@@ -197,7 +200,7 @@ class Repository(object):
         :rtype list[str]: liked users of goods
         """
         if not count:
-            count = self.settings.get('recommendation').get('goods_like_history_search_depth')
+            count = self.settings.get('recommendation').get('search_depth')
         tag = self.get_tag(goods_id)
         key = Repository.get_key_index_goods_user_like_history(tag, goods_id)
         return self.client.lrange(key, -1 * count, -1)
@@ -226,7 +229,7 @@ class Repository(object):
         :rtype list[str]: goods_ids of user
         """
         if not count:
-            count = self.settings.get('recommendation').get('user_history_count')
+            count = self.settings.get('recommendation').get('search_depth')
         key = Repository.get_key_user_like_history(tag, user_id)
         result = self.client.lrange(key, -1 * count, -1)
         if not result:
@@ -349,3 +352,22 @@ class Repository(object):
         :rtype : Lock
         """
         return Lock(self.client, key, interval_sec)
+
+    def trim(self, key, _max=None, hardly_ever=True):
+        """
+        trim redis list data object
+        :param str key:
+        :param int _max: Trim Redis list If the max value is over
+        :param bool hardly_ever: bool
+        :rtype: None
+        """
+        if hardly_ever and random.randint(1, 20) != 1:
+            return
+
+        if _max is None:
+            _max = self.settings.get('recommendation').get('max_history')
+
+        if self.client.llen(key) < _max * 2:
+            return
+        self.client.ltrim(key, _max * -1, -1)
+        return

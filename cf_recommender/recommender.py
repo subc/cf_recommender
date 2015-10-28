@@ -55,7 +55,7 @@ class Recommender(object):
         # like
         self.repository.like(user_id, goods_ids)
 
-        # create index
+        # update index
         self.repository.update_index(user_id, goods_ids)
 
         # update recommendation list

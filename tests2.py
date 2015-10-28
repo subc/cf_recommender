@@ -22,13 +22,13 @@ def test_recommender():
     r = Recommender(settings=settings)
 
     normal_test(r)
+    trim(r)
     register(r)
     like(r)
     get_all(r)
     update_index(r)
     data_consistency(r)
     del_user(r)
-    raise
 
 
 def register(r):
@@ -236,3 +236,20 @@ def test_lock():
     assert r.repository.is_lock(goods_id)
     time.sleep(4)
     assert r.repository.is_lock(goods_id) is False
+
+
+def trim(r):
+    key = "hogehoge:list"
+    cli = r.repository.client
+    l = range(1, 1001)
+    # initial
+    cli.delete(key)
+
+    # set list
+    for x in l:
+        cli.rpush(key, x)
+
+    # trim
+    assert cli.llen(key) == 1000
+    r.repository.trim(key, 200, hardly_ever=False)
+    assert cli.llen(key) == 200
