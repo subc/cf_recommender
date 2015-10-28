@@ -3,7 +3,7 @@ from __future__ import absolute_import, unicode_literals
 from collections import defaultdict
 from .timeit import timeit
 from .repository import Repository
-from .settings import DEFAULT_SETTINGS
+from .default_settings import DEFAULT_SETTINGS
 
 DEFAULT_TAG = 'default'
 

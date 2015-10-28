@@ -3,7 +3,7 @@ from __future__ import absolute_import, unicode_literals
 from collections import defaultdict
 import random
 from redis import Redis
-from .settings import DEFAULT_SETTINGS
+from .default_settings import DEFAULT_SETTINGS
 from .mutex import Lock
 
 # redis key
