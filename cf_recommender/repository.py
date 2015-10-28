@@ -19,8 +19,8 @@ HASH_FIELD_GOODS_TAG = "TAG"
 
 
 class Repository(object):
-    _cli = None
     _CACHE_GOODS_TAG = {}  # class cache
+    _CLI = None
 
     def __init__(self, settings=DEFAULT_SETTINGS):
         DEFAULT_SETTINGS.update(settings)
@@ -60,11 +60,11 @@ class Repository(object):
 
     @property
     def client(self):
-        if self._cli is None:
-            self._cli = Redis(host=self.settings.get('redis').get('host'),
-                              port=self.settings.get('redis').get('port'),
-                              db=self.settings.get('redis').get('db'),)
-        return self._cli
+        if Repository._CLI is None:
+            Repository._CLI = Redis(host=self.settings.get('redis').get('host'),
+                                    port=self.settings.get('redis').get('port'),
+                                    db=self.settings.get('redis').get('db'), )
+        return Repository._CLI
 
     @property
     def expire(self):
