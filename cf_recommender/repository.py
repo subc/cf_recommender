@@ -28,23 +28,23 @@ class Repository(object):
 
     @classmethod
     def get_key_goods_tag(cls, goods_id):
-        return GOODS_TAG_BASE.format(str(goods_id)).upper()
+        return GOODS_TAG_BASE.format(str(goods_id))
 
     @classmethod
     def get_key_user_like_history(cls, tag, user_id):
-        return USER_LIKE_HISTORY_BASE.format(tag, user_id).upper()
+        return USER_LIKE_HISTORY_BASE.format(tag, user_id)
 
     @classmethod
     def get_key_index_goods_user_like_history(cls, tag, goods_id):
-        return INDEX_GOODS_USER_BASE.format(tag, str(goods_id)).upper()
+        return INDEX_GOODS_USER_BASE.format(tag, str(goods_id))
 
     @classmethod
     def get_key_goods_recommendation(cls, tag, goods_id):
-        return GOODS_RECOMMENDATION.format(tag, str(goods_id)).upper()
+        return GOODS_RECOMMENDATION.format(tag, str(goods_id))
 
     @classmethod
     def get_key_goods_mutex(cls, tag, goods_id):
-        return GOODS_MUTEX.format(tag, str(goods_id)).upper()
+        return GOODS_MUTEX.format(tag, str(goods_id))
 
     @classmethod
     def get_user_and_key_from_redis_key(cls, key):
