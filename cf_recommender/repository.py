@@ -62,8 +62,8 @@ class Repository(object):
     def client(self):
         if Repository._CLI is None:
             Repository._CLI = Redis(host=self.settings.get('redis').get('host'),
-                                    port=self.settings.get('redis').get('port'),
-                                    db=self.settings.get('redis').get('db'), )
+                                    port=int(self.settings.get('redis').get('port')),
+                                    db=int(self.settings.get('redis').get('db')), )
         return Repository._CLI
 
     @property
