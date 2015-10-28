@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
+import time
 from cf_recommender.recommender import Recommender
 import random
 from uuid import uuid4
@@ -9,7 +10,7 @@ from cf_recommender.timeit import timeit
 tags = ['default', 'book', 'computer', 'dvd', 'camera', 'clothes', 'tag7', 'tag8', 'tag9', 'tag10']
 
 
-def test_recommender():
+def _test_recommender():
     settings = {
         'expire': 3600 * 24 * 100,
         'redis': {
@@ -204,3 +205,34 @@ def del_user(r):
         users = r.repository.client.lrange(key, 0, -1)
         assert user_id1 not in users
         assert user_id2 not in users
+
+
+def test_lock():
+    settings = {
+        'expire': 3600 * 24 * 100,
+        'redis': {
+            'host': 'localhost',
+            'port': 6379,
+            'db': 11
+        },
+        # recommendation engine settings
+        'recommendation': {
+            'update_interval_sec': 4,
+        },
+    }
+
+    # register goods
+    r = Recommender(settings=settings)
+    goods_id = 1122
+    tag = random.choice(tags)
+    r.register(goods_id, tag)
+
+    # do_lock and expire test[expire 4sec]
+    r.repository.lock(goods_id)
+    key = Repository.get_key_goods_mutex(tag, goods_id)
+    assert r.repository.client.ttl(key) == settings.get('recommendation').get('update_interval_sec')
+    assert r.repository.is_lock(goods_id)
+    time.sleep(1)
+    assert r.repository.is_lock(goods_id)
+    time.sleep(4)
+    assert r.repository.is_lock(goods_id) is False

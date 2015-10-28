@@ -15,16 +15,18 @@ settings = {
     },
 }
 
+_MAX = 1 * 50000
+
 # register new goods
 tags = ['default', 'book', 'computer', 'dvd', 'camera', 'clothes', 'tag7', 'tag8', 'tag9', 'tag10']
 r = Recommender(settings=settings)
-for x in xrange(1, 100 * 10000):
+for x in xrange(1, _MAX):
     r.register(x, tag=random.choice(tags))
 
 # like goods_ids
-for x in xrange(1, 100 * 10000):
+for x in xrange(1, _MAX):
     user_id = str(uuid4())
-    like_goods_ids = [random.randint(1, 100 * 10000) for _x in range(random.randint(1, 100))]
+    like_goods_ids = [random.randint(1, _MAX) for _x in range(random.randint(1, 100))]
     r.like(user_id, like_goods_ids, realtime_update=False)
     if x % 100 == 0:
-        print "{}/{}".format(str(x), "1,000,000")
+        print "{}/{}".format(str(x), str(_MAX))

@@ -14,5 +14,6 @@ DEFAULT_SETTINGS = {
             'recommendation': {
                 'user_history_count': 1000,
                 'goods_like_history_search_depth': 500,
+                'update_interval_sec': 60,
             },
         }

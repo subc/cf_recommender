@@ -4,6 +4,7 @@ from collections import defaultdict
 from redis import Redis
 from cf_recommender.timeit import timeit
 from .settings import DEFAULT_SETTINGS
+from .mutex import Lock
 
 # redis key
 PREFIX = 'CF'
@@ -11,6 +12,7 @@ GOODS_TAG_BASE = '%s:GOODS:TAG:{}' % PREFIX
 USER_LIKE_HISTORY_BASE = '%s:USER:LIKE-HIS:{}:{}' % PREFIX
 INDEX_GOODS_USER_BASE = '%s:INDEX:GOODS-HIS:{}:{}' % PREFIX
 GOODS_RECOMMENDATION = '%s:GOODS:RECO:{}:{}' % PREFIX
+GOODS_MUTEX = '%s:GOODS:MUTEX:{}:{}' % PREFIX
 
 # redis hash key
 HASH_FIELD_GOODS_TAG = "TAG"
@@ -39,6 +41,10 @@ class Repository(object):
     @classmethod
     def get_key_goods_recommendation(cls, tag, goods_id):
         return GOODS_RECOMMENDATION.format(tag, str(goods_id)).upper()
+
+    @classmethod
+    def get_key_goods_mutex(cls, tag, goods_id):
+        return GOODS_MUTEX.format(tag, str(goods_id)).upper()
 
     @classmethod
     def get_user_and_key_from_redis_key(cls, key):
@@ -292,3 +298,33 @@ class Repository(object):
             key = Repository.get_key_index_goods_user_like_history(tag, goods_id)
             self.client.lrem(key, user_id, 0)
         return
+
+    def lock(self, goods_id, interval_sec=None):
+        """
+        :param goods_id: str
+        :rtype : None
+        """
+        if interval_sec is None:
+            interval_sec = self.settings.get('recommendation').get('update_interval_sec')
+        tag = self.get_goods_tag(goods_id)
+        key = Repository.get_key_goods_mutex(tag, goods_id)
+        self.get_lock(key, interval_sec).lock()
+        return
+
+    def is_lock(self, goods_id):
+        """
+        :param goods_id: str
+        :rtype : bool
+        """
+        tag = self.get_goods_tag(goods_id)
+        key = Repository.get_key_goods_mutex(tag, goods_id)
+        return self.get_lock(key, 1).is_lock()
+
+    def get_lock(self, key, interval_sec):
+        """
+        get Lock object
+        :param key: str
+        :param interval_sec: int
+        :rtype : Lock
+        """
+        return Lock(self.client, key, interval_sec)
