@@ -135,7 +135,7 @@ class Repository(object):
     def update_recommendation(self, goods_id, enable_update_interval=False):
         """
         Update goods recommendation list.
-        If enable_update_interval is True, will update at a constant interval
+        If enable_update_interval is True, will update recommendation list at a constant interval
 
         :param goods_id: str
         :param enable_update_interval: bool
@@ -251,8 +251,6 @@ class Repository(object):
             return
         tag = self.get_tag(goods_id)
         key = Repository.get_key_index_goods_user_like_history(tag, goods_id)
-        # print '@@@@@', key, user_ids
-        # delete list
         self.client.delete(key)
         # update list
         self.client.rpush(key, *user_ids)

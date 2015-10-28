@@ -15,7 +15,7 @@ settings = {
     },
 }
 
-_MAX = 1 * 50000
+_MAX = 1 * 2000
 
 # register new goods
 tags = ['default', 'book', 'computer', 'dvd', 'camera', 'clothes', 'tag7', 'tag8', 'tag9', 'tag10']

@@ -41,13 +41,13 @@ class Recommender(object):
         """
         return self.repository.register(goods_id, tag)
 
-    def like(self, user_id, goods_ids, realtime_update=True):
+    def like(self, user_id, goods_ids, realtime_update=True, enable_update_interval=True):
         """
         record user like history
-        about: 100ms * count(goods_ids)
-        :param user_id: str
-        :param goods_ids: list[int]
-        :param realtime_update: bool
+        :param str user_id: user_id
+        :param list[int] goods_ids: list of goods_id
+        :param bool realtime_update: update recommendation
+        :param bool enable_update_interval: will update recommendation list at a constant interval
         :rtype : None
         """
         assert type(goods_ids) == list
@@ -58,10 +58,10 @@ class Recommender(object):
         # create index
         self.repository.update_index(user_id, goods_ids)
 
-        # update recommendation
+        # update recommendation list
         if realtime_update:
             for goods_id in goods_ids:
-                self.repository.update_recommendation(goods_id, enable_update_interval=True)  # RealTime update
+                self.repository.update_recommendation(goods_id, enable_update_interval=enable_update_interval)  # RealTime update
 
         return
 
