@@ -135,7 +135,6 @@ class Recommender(object):
         self.repository.remove_goods(goods_id)
 
     def update_goods_tag(self, goods_id, new_tag):
-        old_tag = self.repository.get_goods_tag(goods_id)
         self.remove_goods(goods_id)
         self.register(goods_id, tag=new_tag)
 

@@ -3,7 +3,6 @@ from __future__ import absolute_import, unicode_literals
 from collections import defaultdict
 import random
 from redis import Redis
-from cf_recommender.timeit import timeit
 from .settings import DEFAULT_SETTINGS
 from .mutex import Lock
 
