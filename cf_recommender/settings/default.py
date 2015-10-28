@@ -7,7 +7,7 @@ DEFAULT_SETTINGS = {
             'redis': {
                 'host': 'localhost',
                 'port': 6379,
-                'db': 12
+                'db': 0
             },
             # recommendation engine settings
             'recommendation_count': 5,
