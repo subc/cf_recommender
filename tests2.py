@@ -10,13 +10,13 @@ from cf_recommender.timeit import timeit
 tags = ['default', 'book', 'computer', 'dvd', 'camera', 'clothes', 'tag7', 'tag8', 'tag9', 'tag10']
 
 
-def _test_recommender():
+def test_recommender():
     settings = {
         'expire': 3600 * 24 * 100,
         'redis': {
             'host': 'localhost',
             'port': 6379,
-            'db': 11
+            'db': 12
         },
     }
     r = Recommender(settings=settings)
@@ -213,7 +213,7 @@ def test_lock():
         'redis': {
             'host': 'localhost',
             'port': 6379,
-            'db': 11
+            'db': 12
         },
         # recommendation engine settings
         'recommendation': {

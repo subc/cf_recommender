@@ -61,7 +61,7 @@ class Recommender(object):
         # update recommendation
         if realtime_update:
             for goods_id in goods_ids:
-                self.repository.update_recommendation(goods_id)  # RealTime update
+                self.repository.update_recommendation(goods_id, enable_update_interval=True)  # RealTime update
 
         return
 

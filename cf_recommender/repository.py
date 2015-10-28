@@ -132,10 +132,23 @@ class Repository(object):
             result[self.get_tag(str(goods_id))] += [str(goods_id)]
         return result
 
-    def update_recommendation(self, goods_id):
+    def update_recommendation(self, goods_id, enable_update_interval=False):
+        """
+        Update goods recommendation list.
+        If enable_update_interval is True, will update at a constant interval
+
+        :param goods_id: str
+        :param enable_update_interval: bool
+        """
         tag = self.get_tag(goods_id)
         if tag is None:
-            return
+            return  # goods doesn't exist
+
+        # will update at a constant interval
+        if enable_update_interval:
+            if self.is_lock(goods_id):
+                return
+            self.lock(goods_id)
 
         # get user
         users = self.get_goods_like_history(goods_id)
@@ -301,11 +314,15 @@ class Repository(object):
 
     def lock(self, goods_id, interval_sec=None):
         """
+        When interval_sec is 0, not lock.
         :param goods_id: str
         :rtype : None
         """
         if interval_sec is None:
             interval_sec = self.settings.get('recommendation').get('update_interval_sec')
+        if interval_sec == 0:
+            return
+
         tag = self.get_goods_tag(goods_id)
         key = Repository.get_key_goods_mutex(tag, goods_id)
         self.get_lock(key, interval_sec).lock()
@@ -316,6 +333,10 @@ class Repository(object):
         :param goods_id: str
         :rtype : bool
         """
+        # When interval_sec is 0, not lock.
+        if self.settings.get('recommendation').get('update_interval_sec') == 0:
+            return False
+
         tag = self.get_goods_tag(goods_id)
         key = Repository.get_key_goods_mutex(tag, goods_id)
         return self.get_lock(key, 1).is_lock()
