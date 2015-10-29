@@ -44,12 +44,14 @@ class Recommender(object):
     def like(self, user_id, goods_ids, realtime_update=True, enable_update_interval=True):
         """
         record user like history
-        :param str user_id: user_id
+        :param str or unicode user_id: user_id
         :param list[int] goods_ids: list of goods_id
         :param bool realtime_update: update recommendation
         :param bool enable_update_interval: will update recommendation list at a constant interval
         :rtype : None
         """
+        if type(goods_ids) in [int, long, str, unicode]:
+            goods_ids = list(goods_ids)
         assert type(goods_ids) == list
 
         # like
@@ -73,8 +75,7 @@ class Recommender(object):
         """
         return self.repository.get_all_goods_ids()
 
-    @timeit
-    def update_all(self, proc=1, scope=(1, 1)):
+    def update_all(self, proc=1, scope=None):
         """
         update all recommendation
 
@@ -83,10 +84,12 @@ class Recommender(object):
         :rtype : None
         """
         all_goods_ids = self.get_all_goods_ids()
-        for goods_id in all_goods_ids:
+        targets = all_goods_ids
+        if scope:
+            targets = slice_list(all_goods_ids, scope)
+        for goods_id in targets:
             self.repository.update_recommendation(goods_id)
 
-    @timeit
     def recreate_all_index(self):
         """
         update all index
@@ -140,3 +143,21 @@ class Recommender(object):
 
     def remove_user(self, user_id):
         self.repository.remove_user(user_id)
+
+
+def slice_list(l, scope):
+    if scope is None:
+        return l
+    if scope[1] <= 1:
+        raise ValueError
+    if scope[0] == scope[1]:
+        raise ValueError
+    if len(scope) != 2:
+        raise AssertionError
+    l.sort()
+    length = len(l)
+    _base = length / scope[1]
+    start = max((_base * scope[0]) - 10, 0)
+    finish = _base * (scope[0] + 1) + 10
+
+    return l[start:finish]

@@ -12,7 +12,7 @@ DEFAULT_SETTINGS = {
             # recommendation engine settings
             'recommendation_count': 10,
             'recommendation': {
-                'update_interval_sec': 3600,
+                'update_interval_sec': 600,
                 'search_depth': 100,
                 'max_history': 1000,
             },

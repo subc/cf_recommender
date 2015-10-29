@@ -1,18 +1,101 @@
+Collaborative Filtering Real Time Recommender Engine
+====================================================
+
+It is a collaborative filtering type RealTime recommendation engine of open source that has been implemented in Python. The Amazon provides a "Customers who bought this product Customers who bought this product also purchased" function and, function similar to the "recommended users" feature of Twitter.
+
+Features
+--------
+- get fast within 10ms
+- Real time updating recommendation list 
+- easy install
+- High versatility
+- Tags Support
+
+Installation
+-----------------
+
+.. code-block:: bash
+
+    $ pip install cf_recommender
+
+Sample Code
+-----------------
+
+.. code-block:: python
+
+    # -*- coding: utf-8 -*-
+    from __future__ import absolute_import, unicode_literals
+    from cf_recommender.recommender import Recommender
+    
+    cf_settings = {
+        # redis
+        'expire': 3600 * 24 * 30,
+        'redis': {
+            'host': 'localhost',
+            'port': 6379,
+            'db': 0
+        },
+        # recommendation engine settings
+        'recommendation_count': 10,
+        'recommendation': {
+            'update_interval_sec': 600,
+            'search_depth': 100,
+            'max_history': 1000,
+        },
+    }
+    
+    
+    # Get recommendation list
+    item_id = 'Item1'
+    recommendation = Recommender(cf_settings)
+    print recommendation.get(item_id, count=3)
+    >>> ['Item10', 'Item3', 'Item2']
+    
+    # register history
+    user_id = 'user-00001'
+    buy_items = ['Item10', 'Item10', 'Item10', 'Item3', 'Item3', 'Item1']
+    for item_id in buy_items:
+        recommendation.register(item_id)
+    recommendation.like(user_id, buy_items)
+
+
+    ...
+
+Bench Mark
+-----------------
+
+.. image:: https://qiita-image-store.s3.amazonaws.com/0/65312/d68405e8-900d-1dab-b92e-bc0df8ac08a7.png
+    :alt: HTTPie compared to cURL
+    :align: center
+
+.. image:: https://qiita-image-store.s3.amazonaws.com/0/65312/6e6810eb-d9d3-959e-9561-5a04ea7d3edc.png
+    :alt: HTTPie compared to cURL
+    :align: center
+
+License untill 2015/12/1
+------------------------------------------
+License :: Free For Home Use
+
+Free - Project with more than three people
+
+Free - others
+
+License after 2015/12/1
+------------------------------------------
+License :: Free For Home Use
+
+1000$ per project - Project with more than three people
+
+Free - others
 
 
 
-# Item削除時の挙動
-Item-Xの削除はRecommender().remove_goods(Item-X)で実施できる。
-Item-Xを削除したとき、Item-AでレコメンドされているItem-Xは消えない
-レコメンドする商品からItem-Xを削除するには2つの方法がある。
+Documentation
+-----------------
 
-1. Item-Aが新しく購入されたとき
-Item-Aが新しく購入(Recommender().like())されたときレコメンドする商品が
-再生成されるため、Item-AのレコメンドからItem-Xが消える
+- get `GoogleAPI token`_
 
-2. 全てのレコメンドする商品一覧を更新する
-Recommender().update_all()を実行する。
-Item数x約100ms実行に掛かるので注意すること
+- `White Paper`_ in Qiita
 
-
-
+.. _`GoogleAPI token`: http://www.php-factory.net/calendar_form/google_api.php
+.. _`White Paper`: http://qiita.com/haminiku/items/3c8f0d43d82c0d58d7da

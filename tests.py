@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
+import time
 from cf_recommender.recommender import Recommender
 import random
 from uuid import uuid4
@@ -15,7 +16,12 @@ def test_recommender():
         'redis': {
             'host': 'localhost',
             'port': 6379,
-            'db': 11
+            'db': 12
+        },
+        'recommendation': {
+            'update_interval_sec': 60,
+            'search_depth': 500,
+            'max_history': 1000,
         },
     }
     r = Recommender(settings=settings)
@@ -27,7 +33,6 @@ def test_recommender():
     update_index(r)
     data_consistency(r)
     del_user(r)
-    raise
 
 
 def register(r):
@@ -78,6 +83,8 @@ def update_index(r):
 
     # update all
     r.update_all()
+    r.update_all(scope=(0, 4))
+    r.update_all(scope=(3, 4))
 
 
 @timeit
@@ -204,3 +211,83 @@ def del_user(r):
         users = r.repository.client.lrange(key, 0, -1)
         assert user_id1 not in users
         assert user_id2 not in users
+
+
+def test_lock():
+    settings = {
+        'expire': 3600 * 24 * 100,
+        'redis': {
+            'host': 'localhost',
+            'port': 6379,
+            'db': 12
+        },
+        # recommendation engine settings
+        'recommendation': {
+            'update_interval_sec': 4,
+        },
+    }
+
+    # register goods
+    r = Recommender(settings=settings)
+    goods_id = 1122
+    tag = random.choice(tags)
+    r.register(goods_id, tag)
+
+    # do_lock and expire test[expire 4sec]
+    r.repository.lock(goods_id)
+    key = Repository.get_key_goods_mutex(tag, goods_id)
+    assert r.repository.client.ttl(key) == settings.get('recommendation').get('update_interval_sec')
+    assert r.repository.is_lock(goods_id)
+    time.sleep(1)
+    assert r.repository.is_lock(goods_id)
+    time.sleep(4)
+    assert r.repository.is_lock(goods_id) is False
+
+
+def test_trim():
+    settings = {
+        'expire': 3600 * 24 * 100,
+        'redis': {
+            'host': 'localhost',
+            'port': 6379,
+            'db': 12
+        },
+        'recommendation': {
+            'update_interval_sec': 60,
+            'search_depth': 10,
+            'max_history': 30,
+        },
+    }
+    r = Recommender(settings=settings)
+
+    key = "hogehoge:list"
+    cli = r.repository.client
+    l = range(1, 1001)
+    # initial
+    cli.delete(key)
+
+    # set list
+    for x in l:
+        cli.rpush(key, x)
+
+    # trim
+    assert cli.llen(key) == 1000
+    r.repository.trim(key, 200, hardly_ever=False)
+    assert cli.llen(key) == 200
+
+    # user register
+    user_id = str('aaaaaaaa-aaaa-aaaa-aaaa-000000000005')
+    goods_id = 'ITEM-{}'.format(str(215))
+    tag = random.choice(tags)
+    r.register(goods_id, tag)
+    _max = 200
+    for x in xrange(_max):
+        r.like(user_id, [goods_id])
+    r.update(goods_id)
+
+    key = Repository.get_key_user_like_history(tag, user_id)
+    print "user hist", r.repository.client.llen(key)
+    assert r.repository.client.llen(key) < _max
+    key = Repository.get_key_index_goods_user_like_history(tag, goods_id)
+    print "index", r.repository.client.llen(key)
+    assert "index", r.repository.client.llen(key) < _max
