@@ -72,8 +72,9 @@ Bench Mark
     :alt: HTTPie compared to cURL
     :align: center
 
+
 License
-===============
+-----------------
 
 For companies and organizations
 *********************************************
