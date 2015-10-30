@@ -76,6 +76,8 @@ Bench Mark
 License
 -----------------
 
+License :: Free For Home Use
+
 For companies and organizations
 *********************************************
 
