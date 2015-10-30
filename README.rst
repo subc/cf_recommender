@@ -72,21 +72,24 @@ Bench Mark
     :alt: HTTPie compared to cURL
     :align: center
 
-License untill 2015/12/1
-------------------------------------------
-License :: Free For Home Use
+License
+===============
 
-Free - Project with more than three people
+For companies and organizations
+*********************************************
 
-Free - others
+Commercial License
 
-License after 2015/12/1
-------------------------------------------
-License :: Free For Home Use
+Commercial Licenses are available to legal entities, including companies and organizations (both for-profit and non-profit), which require the software for general commercial use.
 
-1000$ per project - Project with more than three people
+- Free untill Dec 1, 2015
 
-Free - others
+- $1000 used for each product From Dec 1, 2015
+
+For individual developers
+*********************************************
+
+Always Free
 
 
 
