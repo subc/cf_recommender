@@ -361,6 +361,7 @@ Commercial License
 
 Commercial Licenses are available to legal entities, including companies and organizations (both for-profit and non-profit), which require the software for general commercial use.
 
+PAY US $1000.0 / system
 `PayPal here`_
 
 For individual developers
