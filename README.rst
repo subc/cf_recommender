@@ -361,9 +361,7 @@ Commercial License
 
 Commercial Licenses are available to legal entities, including companies and organizations (both for-profit and non-profit), which require the software for general commercial use.
 
-- Free untill Dec 1, 2015
-
-- $1000 used for each product From Dec 1, 2015
+`PayPal here`_
 
 For individual developers
 *********************************************
@@ -379,3 +377,4 @@ Documentation
 - `Japanese Document`_ in Qiita
 
 .. _`Japanese Document`: http://qiita.com/haminiku/items/0cdf006d667ef8a7494e
+.. _`PayPal here`: http://subc.github.io/payment/cf_recommender.html
