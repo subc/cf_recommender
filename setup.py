@@ -19,7 +19,7 @@ setup(
     include_package_data=True,
     install_requires=['redis >= 2.9.1',
                       ],
-    license='License :: Free For Home Use',
+    license='MIT License',
     zip_safe=False,
     keywords=['recommendation',
               'recommender',
